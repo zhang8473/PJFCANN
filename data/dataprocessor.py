@@ -24,9 +24,9 @@ def JD_segmentor(jd_content):
 
 class AliDataProcessor:
     def __init__(self, dataDir):
-        self.user_file = os.path.join(dataDir, 'table1_user')
-        self.jd_file = os.path.join(dataDir, 'table2_jd')
-        self.action_file = os.path.join(dataDir, 'table3_action')
+        self.user_file = os.path.join(dataDir, 'table1_user.csv')
+        self.jd_file = os.path.join(dataDir, 'table2_jd.csv')
+        self.action_file = os.path.join(dataDir, 'table3_action.csv')
         self.browse_pair = self._generate_pair(mode='browsed') # list
         self.deliver_pair = self._generate_pair(mode='delivered') # list
         self.satisfied_pair = self._generate_pair(mode='satisfied') # list
@@ -45,9 +45,10 @@ class AliDataProcessor:
     def _generate_pair(self, mode='satisfied'):
         res_list = []
         f_action = open(self.action_file, 'r')
+        header = next(f_action)
 
         for line in f_action:
-            action_list = line.replace('\n', '').split('\t')
+            action_list = line.replace('\n', '').split(',')
             user_id = action_list[0]
             jd_no = action_list[1]
             browsed = action_list[2]
