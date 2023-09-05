@@ -45,8 +45,7 @@ class AliDataProcessor:
     def _generate_pair(self, mode='satisfied'):
         res_list = []
         f_action = open(self.action_file, 'r')
-        header = next(f_action)
-
+        next(f_action)
         for line in f_action:
             action_list = line.replace('\n', '').split(',')
             user_id = action_list[0]
@@ -72,9 +71,10 @@ class AliDataProcessor:
 
         if mode == 'user':
             f = open(self.user_file, 'r', encoding='utf8')
+            next(f)
             print('[user mode ...]')
             for line in tqdm(f):
-                user_list = line.replace('\n', '').split('\t')
+                user_list = line.replace('\n', '').split(',')
                 user_id = user_list[0]
                 if user_id in res_dict:
                     break
@@ -106,31 +106,33 @@ class AliDataProcessor:
                     res_dict[user_id].append(i)
 
         else: # mode == 'jd'
-            f = open(self.jd_file, 'r', encoding='utf8')
             print('[jd mode ...]')
-            for line in tqdm(f):
-                jd_list = line.replace('\n', '').split('\t')
-                jd_no = jd_list[0]
-                if jd_no in res_dict:
-                    break
-                else:
-                    res_dict[jd_no] = []
-                jd_title = jd_list[1]
-                jd_sub_type = jd_list[4]
-                min_edu_level = jd_list[13]
-                job_description = jd_list[17]
+            import csv
+            with open(self.jd_file, 'r', encoding='utf8') as csvfile:
+                reader = csv.reader(csvfile, delimiter='\t')
+                next(reader)
+                for jd_list in reader:
+                    jd_no = jd_list[0]
+                    if jd_no in res_dict:
+                        break
+                    else:
+                        res_dict[jd_no] = []
+                    jd_title = jd_list[1]
+                    jd_sub_type = jd_list[4]
+                    min_edu_level = jd_list[13]
+                    job_description = jd_list[17]
 
-                job_title_list = jd_title.split('/')
-                jd_sub_type_list = jd_sub_type.split('/')
-                for i in job_title_list:
-                    res_dict[jd_no].append(i)
-                for i in jd_sub_type_list:
-                    res_dict[jd_no].append(i)
-                if min_edu_level != '\\N':
-                    res_dict[jd_no].append(min_edu_level)
-                job_description_list = self._generate_jd_list(job_description)
-                for i in job_description_list:
-                    res_dict[jd_no].append(i)
+                    job_title_list = jd_title.split('/')
+                    jd_sub_type_list = jd_sub_type.split('/')
+                    for i in job_title_list:
+                        res_dict[jd_no].append(i)
+                    for i in jd_sub_type_list:
+                        res_dict[jd_no].append(i)
+                    if min_edu_level != '\\N':
+                        res_dict[jd_no].append(min_edu_level)
+                    job_description_list = self._generate_jd_list(job_description)
+                    for i in job_description_list:
+                        res_dict[jd_no].append(i)
 
         return res_dict
 

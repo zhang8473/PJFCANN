@@ -199,14 +199,14 @@ def prepro_Infer_each(args, data_path, out_name, exp_len = 50):
 
 def preprocess_Graph(args):
     if not os.path.exists(args.train_test_dir):
-        os.makedirs(args.target_dir)
+        os.makedirs(args.train_test_dir)
 
     prepro_Graph_each(args, "data/step1_data/exp_morethan_50_graph/data_train.json", "train")
     prepro_Graph_each(args, "data/step1_data/exp_morethan_50_graph/data_test.json", "test")
     prepro_Graph_each(args, "data/step1_data/exp_morethan_50_graph/data_dev.json", "dev")
 
 
-def prepro_Graph_each(args, data_path, out_name, exp_len = 50, graph_num = 5):
+def prepro_Graph_each(args, data_path, out_name, exp_len=50, graph_num=5):
     # Choose tokenizer
     if args.tokenizer == 'jieba':
         word_tokenizer = jieba.cut
@@ -226,10 +226,10 @@ def prepro_Graph_each(args, data_path, out_name, exp_len = 50, graph_num = 5):
         jd_luqu_dict = json.load(f)
 
     # Reading nothired.json
-    with open("data/step1_data/exp_morethan_50_graph/graph_nothired_user.json", 'r', encoding='utf8') as f:
-        user_nothired_dict = json.load(f)
-    with open("data/step1_data/exp_morethan_50_graph/graph_nothired_jd.json", 'r', encoding='utf8') as f:
-        jd_nothired_dict = json.load(f)
+    # with open("data/step1_data/exp_morethan_50_graph/graph_nothired_user.json", 'r', encoding='utf8') as f:
+    #     user_nothired_dict = json.load(f)
+    # with open("data/step1_data/exp_morethan_50_graph/graph_nothired_jd.json", 'r', encoding='utf8') as f:
+    #     jd_nothired_dict = json.load(f)
 
     jd_write_file = open("data/train-test_data/s1.{}".format(out_name), 'w', encoding='utf8')
     cv_write_file = open("data/train-test_data/s2.{}".format(out_name), 'w', encoding='utf8')
@@ -241,7 +241,7 @@ def prepro_Graph_each(args, data_path, out_name, exp_len = 50, graph_num = 5):
     user_id2num, user_num2id, jd_id2num, jd_num2id = load_index_table(args)
 
     # Generate and write
-    for i, content in enumerate(tqdm(source_data[0:len(source_data)])):
+    for i, content in enumerate(tqdm(source_data)):
 
         jd_list = source_data[i]['job_posting']
         resume_list = source_data[i]['resume']
@@ -341,13 +341,13 @@ def index_table(config):
     print('JD: ', len(jd_num2id))
 
     f_save_uid2num = open(config.f_save_uid2num, 'w', encoding='utf8')
-    json.dump(user_id2num, f_save_uid2num)
+    json.dump(user_id2num, f_save_uid2num, ensure_ascii=False)
     f_save_unum2id = open(config.f_save_unum2id, 'w', encoding='utf8')
-    json.dump(user_num2id, f_save_unum2id)
+    json.dump(user_num2id, f_save_unum2id, ensure_ascii=False)
     f_save_jid2num = open(config.f_save_jid2num, 'w', encoding='utf8')
-    json.dump(jd_id2num, f_save_jid2num)
+    json.dump(jd_id2num, f_save_jid2num, ensure_ascii=False)
     f_save_jnum2id = open(config.f_save_jnum2id, 'w', encoding='utf8')
-    json.dump(jd_num2id, f_save_jnum2id)
+    json.dump(jd_num2id, f_save_jnum2id, ensure_ascii=False)
 
     f_save_unum2id.close()
     f_save_uid2num.close()
@@ -420,7 +420,12 @@ if __name__ == '__main__':
     # Step 1. change original data into data.json
     print('total user nums: ', len(DataProcessor.user_dict))
     print('total jd nums: ', len(DataProcessor.jd_dict))
-    DataProcessor.generate_datajson('data/step1_data/exp_morethan_50_graph/data.json', 50)
+    import os
+    path = "data/step1_data/exp_morethan_50_graph"
+    if not os.path.exists(path):
+        # Create a new directory because it does not exist
+        os.makedirs(path)
+    DataProcessor.generate_datajson('data/step1_data/exp_morethan_50_graph/data.json', exp_len=50)
     DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/user.json', mode='user')
     DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/jd.json', mode='jd')
     DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/graph_hired_jd.json', mode='graph_jd')
