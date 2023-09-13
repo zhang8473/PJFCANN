@@ -425,13 +425,14 @@ if __name__ == '__main__':
     if not os.path.exists(path):
         # Create a new directory because it does not exist
         os.makedirs(path)
-    DataProcessor.generate_datajson('data/step1_data/exp_morethan_50_graph/data.json', exp_len=50)
+    DataProcessor.generate_datajson('data/step1_data/exp_morethan_50_graph/data.json', exp_len=0)
     DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/user.json', mode='user')
     DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/jd.json', mode='jd')
     DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/graph_hired_jd.json', mode='graph_jd')
     DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/graph_hired_user.json', mode='graph_user')
     DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/graph_nothired_jd.json', mode='graph_nothired_jd')
     DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/graph_nothired_user.json', mode='graph_nothired_user')
+
 
     # 2. change data.json into train/test.json
     preprocess_Graph(args)

@@ -68,13 +68,14 @@ class AliDataProcessor:
     def _generate_dict(self, mode='user'):
         res_dict = {}
         # mode in [user, jd]
-
+        import csv
         if mode == 'user':
             f = open(self.user_file, 'r', encoding='utf8')
             next(f)
             print('[user mode ...]')
-            for line in tqdm(f):
-                user_list = line.replace('\n', '').split(',')
+            csv_reader = csv.reader(f, delimiter=',', quotechar='"')
+            for line in tqdm(csv_reader):
+                user_list = line
                 user_id = user_list[0]
                 if user_id in res_dict:
                     break
@@ -92,18 +93,12 @@ class AliDataProcessor:
                 cur_industry_id_list = cur_industry_id.split('/')
                 cur_jd_type_list = cur_jd_type.split('/')
                 experience_list = experience.split('|')
-
-                for i in desire_jd_industry_id_list:
-                    res_dict[user_id].append(i)
-                for i in desire_jd_type_id_list:
-                    res_dict[user_id].append(i)
-                for i in cur_industry_id_list:
-                    res_dict[user_id].append(i)
-                for i in cur_jd_type_list:
-                    res_dict[user_id].append(i)
+                res_dict[user_id].extend(desire_jd_industry_id_list)
+                res_dict[user_id].extend(desire_jd_type_id_list)
+                res_dict[user_id].extend(cur_industry_id_list)
+                res_dict[user_id].extend(cur_jd_type_list)
                 res_dict[user_id].append(cur_degree_id)
-                for i in experience_list:
-                    res_dict[user_id].append(i)
+                res_dict[user_id].extend(experience_list)
 
         else: # mode == 'jd'
             print('[jd mode ...]')
@@ -187,8 +182,8 @@ class AliDataProcessor:
                 write_line["job_posting"] = self.jd_dict[jd_no]
             else:
                 continue
-            if(len(write_line["resume"]) >= exp_len):
-                f_write.write(json.dumps(write_line) + '\n')
+            if len(write_line["resume"]) >= exp_len:
+                f_write.write(json.dumps(write_line, ensure_ascii=False) + '\n')
 
         # delivered的行, label为0
         for pair in self.deliver_pair:
@@ -203,8 +198,8 @@ class AliDataProcessor:
                 write_line["job_posting"] = self.jd_dict[jd_no]
             else:
                 continue
-            if (len(write_line["resume"]) >= exp_len):
-                f_write.write(json.dumps(write_line) + '\n')
+            if len(write_line["resume"]) >= exp_len:
+                f_write.write(json.dumps(write_line, ensure_ascii=False) + '\n')
 
         f_write.close()
         return
