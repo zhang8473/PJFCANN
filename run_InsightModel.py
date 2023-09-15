@@ -29,7 +29,7 @@ parser = argparse.ArgumentParser(description='Insight Training')
 # path
 # ========
 parser.add_argument("--insightpath", default='data/train-test_data/', help="Insight data path")
-parser.add_argument("--word_emb_path", default='data/embedding/Tencent_AILab_ChineseEmbedding.txt')
+parser.add_argument("--word_emb_path", default='/home/jinzhong/Glove/Tencent_AILab_ChineseEmbedding.txt')
 parser.add_argument("--word_emb_dim", type=int, default=200, help="word embedding dimension")
 parser.add_argument("--outputdir", type=str, default='checkpoint/Insight', help="Output directory")
 parser.add_argument("--outputmodelname", type=str, default='model.pickle')
