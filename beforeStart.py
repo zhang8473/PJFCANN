@@ -399,10 +399,10 @@ if __name__ == '__main__':
     parser.add_argument('--tokenizer', default='jieba')
     parser.add_argument('--train_test_dir', default='data/train-test_data')
     parser.add_argument('--table_action', default='train-test_data\\table3_action')
-    parser.add_argument('--f_save_uid2num', default='Recruitment_round1_train_20190716\\uid2num.json')
-    parser.add_argument('--f_save_unum2id', default='Recruitment_round1_train_20190716\\unum2id.json')
-    parser.add_argument('--f_save_jid2num', default='Recruitment_round1_train_20190716\\jid2num.json')
-    parser.add_argument('--f_save_jnum2id', default='Recruitment_round1_train_20190716\\jnum2id.json')
+    parser.add_argument('--f_save_uid2num', default='data/step1_data/uid2num.json')
+    parser.add_argument('--f_save_unum2id', default='data/step1_data/unum2id.json')
+    parser.add_argument('--f_save_jid2num', default='data/step1_data/jid2num.json')
+    parser.add_argument('--f_save_jnum2id', default='data/step1_data/jnum2id.json')
     args = parser.parse_args()
 
     # Step 0. choose Processor according to the original data
@@ -428,7 +428,7 @@ if __name__ == '__main__':
     DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/graph_nothired_user.json', mode='graph_nothired_user')
 
     # 2. change data.json into train/test.json
-    split_train_test('data/step1_data/exp_morethan_50_graph/data.json', train_ratio=0.8, test_ratio=0.1, val_ratio=0.1)
+    # split_train_test('data/step1_data/exp_morethan_50_graph/data.json', train_ratio=0.8, test_ratio=0.1, val_ratio=0.1)
 
     index_table(args)
-    preprocess_Graph(args)
+    # preprocess_Graph(args)

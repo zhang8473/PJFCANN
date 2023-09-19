@@ -43,20 +43,6 @@ def get_batch(batch, word_vec, emb_dim = 300):
             embed[j, i, :] = word_vec[batch[i][j]]
     return torch.from_numpy(embed).float(), lengths
 
-
-def get_word_dict(sentences):
-    '''create vocab of words'''
-    word_dict = {}
-    for sent in sentences:
-        for word in sent.split():
-            if word not in word_dict:
-                word_dict[word] = ''
-    word_dict['<s>'] = ''
-    word_dict['</s>'] = ''
-    word_dict['<p>'] = ''
-    return word_dict
-
-
 def get_glove(word_dict, glove_path):
     '''create word_vec with glove vectors'''
     word_vec = {}
@@ -70,8 +56,15 @@ def get_glove(word_dict, glove_path):
     return word_vec
 
 
-def build_vocab(sentences, glove_path):
-    word_dict = get_word_dict(sentences)
+def build_vocab(words_sets, glove_path):
+    word_dict = {}
+    for words in words_sets:
+        for word in words:
+            if word not in word_dict:
+                word_dict[word] = None
+    word_dict['<s>'] = None
+    word_dict['</s>'] = None
+    word_dict['<p>'] = None
     word_vec = get_glove(word_dict, glove_path)
     print('Vocab size : {0}'.format(len(word_vec)))
     return word_vec
@@ -301,7 +294,7 @@ class graphData():
             u_A = np.concatenate([u_A_in, u_A_out]).transpose()
             A.append(u_A)
             alias_inputs.append([np.where(node == i)[0][0] for i in u_input])
-        return alias_inputs, A, items, mask
+        return np.array(alias_inputs), np.array(A), np.array(items), np.array(mask)
 
 
 if __name__ == '__main__':

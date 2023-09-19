@@ -29,7 +29,7 @@ parser = argparse.ArgumentParser(description='Insight Training')
 # path
 # ========
 parser.add_argument("--insightpath", default='data/train-test_data/', help="Insight data path")
-parser.add_argument("--word_emb_path", default='/home/jinzhong/Glove/Tencent_AILab_ChineseEmbedding.txt')
+parser.add_argument("--word_emb_path", default='/home/jinzhong/Glove/Tencent_AILab_ChineseEmbedding/Tencent_AILab_ChineseEmbedding.txt')
 parser.add_argument("--word_emb_dim", type=int, default=200, help="word embedding dimension")
 parser.add_argument("--outputdir", type=str, default='checkpoint/Insight', help="Output directory")
 parser.add_argument("--outputmodelname", type=str, default='model.pickle')
@@ -93,18 +93,18 @@ torch.cuda.manual_seed(params.seed)
 DATA
 """
 train, valid, test = get_insight(params)
+for split in ['s1', 's2']:
+    for data_type in ['train', 'valid', 'test']:
+        eval(data_type)[split] = [['<s>'] + [word for word in sent.split()] + ['</s>'] for sent in eval(data_type)[split]]
+for split in ['g1', 'g2']:
+    for data_type in ['train', 'valid', 'test']:
+        eval(data_type)[split] = [session for session in eval(data_type)[split]]
 word_vec = build_vocab(train['s1'] + train['s2'] +
                        valid['s1'] + valid['s2'] +
                        test['s1'] + test['s2'], params.word_emb_path)
 for split in ['s1', 's2']:
     for data_type in ['train', 'valid', 'test']:
-        eval(data_type)[split] = np.array([['<s>'] +
-            [word for word in sent.split() if word in word_vec] +
-            ['</s>'] for sent in eval(data_type)[split]])
-for split in ['g1', 'g2']:
-    for data_type in ['train', 'valid', 'test']:
-        eval(data_type)[split] = np.array([session
-            for session in eval(data_type)[split]])
+        eval(data_type)[split] = [[word for word in words if word in word_vec] for words in eval(data_type)[split]]
 
 """
 MODEL
@@ -177,14 +177,18 @@ def trainepoch(epoch):
     last_time = time.time()
     correct = 0.
     # shuffle the data
-    permutation = np.random.permutation(len(train['s1']))
-
-    s1 = train['s1'][permutation]
-    s2 = train['s2'][permutation]
-    g1 = train['g1'][permutation]
-    g2 = train['g2'][permutation]
-    target = train['label'][permutation]
-
+    import random
+    random.shuffle(train['s1'])
+    s1=train['s1']
+    random.shuffle(train['s2'])
+    s2=train['s2']
+    random.shuffle(train['g1'])
+    g1=train['g1']
+    random.shuffle(train['g2'])
+    g2=train['g2']
+    random.shuffle(train['label'])
+    target = train['label']
+    assert len(s1) == len(s2) == len(g1) == len(g2) == len(target)
     optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] * params.decay if epoch > 1\
         and 'sgd' in params.optimizer else optimizer.param_groups[0]['lr']
     print('Learning Rate : {0}'.format(optimizer.param_groups[0]['lr']))
@@ -201,7 +205,7 @@ def trainepoch(epoch):
                                      word_vec, params.word_emb_dim)
         s1_batch, s2_batch = Variable(s1_batch.cuda()), Variable(s2_batch.cuda())
         tgt_batch = Variable(torch.LongTensor(target[stidx:stidx + params.batch_size])).cuda()
-        k = s1_batch.size(1) # actual batch_size
+        k = s1_batch.size(1)  # actual batch_size
 
         # model forward
         output = Insight_model((s1_batch, s1_len), (s2_batch, s2_len), g1, g2, slice, tgt_batch)
