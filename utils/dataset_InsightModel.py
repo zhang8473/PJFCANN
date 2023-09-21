@@ -51,8 +51,7 @@ def get_glove(word_dict, glove_path):
             word, vec = line.split(' ', 1)
             if word in word_dict:
                 word_vec[word] = np.array(list(map(float, vec.split())))
-    print('Found {0}(/{1}) words with glove vectors'.format(
-        len(word_vec), len(word_dict)))
+    print('Found {0}(/{1}) words with glove vectors'.format(len(word_vec), len(word_dict)))
     return word_vec
 
 

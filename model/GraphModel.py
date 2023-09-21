@@ -14,6 +14,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
 
+
 class GNN(nn.Module):
     def __init__(self, hidden_size, step=1):
         super(GNN, self).__init__()
@@ -58,6 +59,7 @@ class GNN(nn.Module):
         for i in range(self.step):
             hidden = self.GNNCell(A, hidden)
         return hidden
+
 
 class SessionGraph(nn.Module):
     def __init__(self, config, n_node):

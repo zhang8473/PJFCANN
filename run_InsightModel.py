@@ -98,13 +98,35 @@ for split in ['s1', 's2']:
         eval(data_type)[split] = [['<s>'] + [word for word in sent.split()] + ['</s>'] for sent in eval(data_type)[split]]
 for split in ['g1', 'g2']:
     for data_type in ['train', 'valid', 'test']:
-        eval(data_type)[split] = [session for session in eval(data_type)[split]]
-word_vec = build_vocab(train['s1'] + train['s2'] +
-                       valid['s1'] + valid['s2'] +
-                       test['s1'] + test['s2'], params.word_emb_path)
+        eval(data_type)['g1'] = [session for session in eval(data_type)['g1']]
+
+import pickle
+from pathlib import Path
+cache_file = 'word_vec_cache.pkl'
+if Path(cache_file).exists():
+    # Cache file exists, load it
+    with open(cache_file, 'rb') as f:
+        word_vec = pickle.load(f)
+    print(f"Loaded word vec from {cache_file}")
+else:
+    # Cache file doesn't exist, create it
+
+    # Normally you would build vocab here
+    # word_vec_map = build_vocab(...)
+
+    # Write vocab map to cache file
+    word_vec = build_vocab(train['s1'] + train['s2'] +
+                           valid['s1'] + valid['s2'] +
+                           test['s1'] + test['s2'], params.word_emb_path)
+    with open(cache_file, 'wb') as f:
+        pickle.dump(word_vec, f)
+
 for split in ['s1', 's2']:
     for data_type in ['train', 'valid', 'test']:
         eval(data_type)[split] = [[word for word in words if word in word_vec] for words in eval(data_type)[split]]
+
+params.n_J_node = max(j_ for js in train['g1'] for j_ in js)
+params.n_R_node = max(r_ for rs in train['g2'] for r_ in rs)
 
 """
 MODEL
@@ -178,17 +200,9 @@ def trainepoch(epoch):
     correct = 0.
     # shuffle the data
     import random
-    random.shuffle(train['s1'])
-    s1=train['s1']
-    random.shuffle(train['s2'])
-    s2=train['s2']
-    random.shuffle(train['g1'])
-    g1=train['g1']
-    random.shuffle(train['g2'])
-    g2=train['g2']
-    random.shuffle(train['label'])
-    target = train['label']
-    assert len(s1) == len(s2) == len(g1) == len(g2) == len(target)
+    lists_ = list(zip(train['s1'], train['s2'], train['g1'], train['g2'], train['label']))
+    random.shuffle(lists_)
+    s1, s2, g1, g2, target = zip(*lists_)
     optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] * params.decay if epoch > 1\
         and 'sgd' in params.optimizer else optimizer.param_groups[0]['lr']
     print('Learning Rate : {0}'.format(optimizer.param_groups[0]['lr']))
@@ -206,7 +220,6 @@ def trainepoch(epoch):
         s1_batch, s2_batch = Variable(s1_batch.cuda()), Variable(s2_batch.cuda())
         tgt_batch = Variable(torch.LongTensor(target[stidx:stidx + params.batch_size])).cuda()
         k = s1_batch.size(1)  # actual batch_size
-
         # model forward
         output = Insight_model((s1_batch, s1_len), (s2_batch, s2_len), g1, g2, slice, tgt_batch)
         pred = output.data.max(1)[1]

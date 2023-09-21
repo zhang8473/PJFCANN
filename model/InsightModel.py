@@ -102,14 +102,11 @@ class InsightModel(nn.Module):
         A2 = trans_to_cuda(torch.Tensor(A2).float())
         mask1 = trans_to_cuda(torch.Tensor(mask1).long())
         mask2 = trans_to_cuda(torch.Tensor(mask2).long())
-
         hidden_J = self.gnn_J(items1, A1)
         hidden_R = self.gnn_R(items2, A2)
 
         getJ = lambda i: hidden_J[i][alias_inputs1[i]]
         getR = lambda i: hidden_R[i][alias_inputs2[i]]
-        length1 = torch.arange(len(alias_inputs1))
-        length2 = torch.arange(len(alias_inputs2))
         seq_hidden1 = torch.stack([getJ(i) for i in torch.arange(len(alias_inputs1)).long()])
         seq_hidden2 = torch.stack([getR(i) for i in torch.arange(len(alias_inputs2)).long()])
         H_global_J = self.gnn_J.compute_globalhidden(seq_hidden1, mask1)
