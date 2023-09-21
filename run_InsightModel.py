@@ -65,8 +65,6 @@ parser.add_argument("--pool_type", type=str, default='max', help="max or mean")
 # =======
 # model -- GNN
 # =======
-parser.add_argument("--n_J_node", default=264565)
-parser.add_argument("--n_R_node", default=4465)
 parser.add_argument("--step", default=1, help='GNN propogation steps')
 parser.add_argument("--hiddenSize", default=200, help='hidden state size of gnn')
 parser.add_argument("--nonhybrid", action='store_true', help='only use the global preference to predict')
@@ -125,8 +123,8 @@ for split in ['s1', 's2']:
     for data_type in ['train', 'valid', 'test']:
         eval(data_type)[split] = [[word for word in words if word in word_vec] for words in eval(data_type)[split]]
 
-params.n_J_node = max(j_ for js in train['g1'] for j_ in js)
-params.n_R_node = max(r_ for rs in train['g2'] for r_ in rs)
+params.n_J_node = max(j_ for js in train['g1'] for j_ in js)+1
+params.n_R_node = max(r_ for rs in train['g2'] for r_ in rs)+1
 
 """
 MODEL
