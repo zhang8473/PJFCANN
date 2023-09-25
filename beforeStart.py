@@ -430,5 +430,5 @@ if __name__ == '__main__':
     # 2. change data.json into train/test.json
     # split_train_test('data/step1_data/exp_morethan_50_graph/data.json', train_ratio=0.8, test_ratio=0.1, val_ratio=0.1)
 
-    index_table(args)
+    # index_table(args)
     # preprocess_Graph(args)

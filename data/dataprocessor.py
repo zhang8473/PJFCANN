@@ -125,9 +125,7 @@ class AliDataProcessor:
                         res_dict[jd_no].append(i)
                     if min_edu_level != '\\N':
                         res_dict[jd_no].append(min_edu_level)
-                    job_description_list = self._generate_jd_list(job_description)
-                    for i in job_description_list:
-                        res_dict[jd_no].append(i)
+                    res_dict[jd_no] += self._generate_jd_list(job_description)
 
         return res_dict
 

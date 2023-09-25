@@ -335,8 +335,10 @@ epoch = 1
 
 while not stop_training and epoch <= params.n_epochs:
     train_acc = trainepoch(epoch)
-    eval_acc = evaluate(epoch, 'test')
+    eval_acc = evaluate(epoch, 'valid')
     epoch += 1
+
+eval_acc = evaluate(epoch, 'test')
 
 # Run best model on test set
 Insight_model.load_state_dict(torch.load(os.path.join(params.outputdir, params.outputmodelname)))
