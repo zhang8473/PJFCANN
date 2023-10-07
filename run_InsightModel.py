@@ -35,8 +35,8 @@ parser.add_argument("--outputdir", type=str, default='checkpoint/Insight', help=
 parser.add_argument("--outputmodelname", type=str, default='model.pickle')
 parser.add_argument("--unum2id", default="data/step1_data/unum2id.json")
 parser.add_argument("--jnum2id", default="data/step1_data/jnum2id.json")
-parser.add_argument("--jd_json", default="data/step1_data/exp_morethan_50_graph/jd.json")
-parser.add_argument("--user_json", default="data/step1_data/exp_morethan_50_graph/user.json")
+parser.add_argument("--jd_json", default="data/step1_data/exp_morethan_0_graph/jd.json")
+parser.add_argument("--user_json", default="data/step1_data/exp_morethan_0_graph/user.json")
 
 # ========
 # training

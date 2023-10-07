@@ -13,7 +13,6 @@ This Part works for changing original data into
 import os
 import json
 import jieba
-from itertools import islice
 from tqdm import tqdm
 from collections import Counter
 
@@ -158,9 +157,6 @@ def prepro_Infer_each(args, data_path, out_name, exp_len = 50):
 
         jd_list = source_data[i]['job_posting']
         resume_list = source_data[i]['resume']
-        job_id = source_data[i]['job_id']
-        resume_id = source_data[i]['resume_id']
-        pair_id = source_data[i]['pair_id']
         label = source_data[i]['label']
 
         # job posting
@@ -201,9 +197,9 @@ def preprocess_Graph(args):
     if not os.path.exists(args.train_test_dir):
         os.makedirs(args.train_test_dir)
 
-    prepro_Graph_each(args, "data/step1_data/exp_morethan_50_graph/data_dev.json", "dev")
-    prepro_Graph_each(args, "data/step1_data/exp_morethan_50_graph/data_train.json", "train")
-    prepro_Graph_each(args, "data/step1_data/exp_morethan_50_graph/data_test.json", "test")
+    prepro_Graph_each(args, "data/step1_data/exp_morethan_0_graph/data_dev.json", "dev")
+    prepro_Graph_each(args, "data/step1_data/exp_morethan_0_graph/data_train.json", "train")
+    prepro_Graph_each(args, "data/step1_data/exp_morethan_0_graph/data_test.json", "test")
 
 
 def prepro_Graph_each(args, data_path, out_name, exp_len=50, graph_num=5):
@@ -220,15 +216,15 @@ def prepro_Graph_each(args, data_path, out_name, exp_len=50, graph_num=5):
             source_data.append(json.loads(line))
 
     # Reading luqu.json
-    with open("data/step1_data/exp_morethan_50_graph/graph_hired_user.json", 'r', encoding='utf8') as f:
+    with open("data/step1_data/exp_morethan_0_graph/graph_hired_user.json", 'r', encoding='utf8') as f:
         user_luqu_dict = json.load(f)
-    with open("data/step1_data/exp_morethan_50_graph/graph_hired_jd.json", 'r', encoding='utf8') as f:
+    with open("data/step1_data/exp_morethan_0_graph/graph_hired_jd.json", 'r', encoding='utf8') as f:
         jd_recruit_dict = json.load(f)
 
     # Reading nothired.json
-    # with open("data/step1_data/exp_morethan_50_graph/graph_nothired_user.json", 'r', encoding='utf8') as f:
+    # with open("data/step1_data/exp_morethan_0_graph/graph_nothired_user.json", 'r', encoding='utf8') as f:
     #     user_nothired_dict = json.load(f)
-    # with open("data/step1_data/exp_morethan_50_graph/graph_nothired_jd.json", 'r', encoding='utf8') as f:
+    # with open("data/step1_data/exp_morethan_0_graph/graph_nothired_jd.json", 'r', encoding='utf8') as f:
     #     jd_nothired_dict = json.load(f)
 
     jd_write_file = open("data/train-test_data/s1.{}".format(out_name), 'w', encoding='utf8')
@@ -366,28 +362,40 @@ def load_index_table(config):
 def split_train_test(input_, train_ratio, test_ratio, val_ratio):
     assert train_ratio+test_ratio+val_ratio==1.0
     import random
+    zeros = []
+    ones = []
     # Open the text file and read all lines
     directory = os.path.dirname(input_)
     with open(input_, 'r') as f:
-        lines = f.readlines()
-    # Shuffle the lines
-    random.shuffle(lines)
+        for line in f.readlines():
+            datum = json.loads(line)
+            if datum['label'] == 0:
+                zeros.append(line)
+            elif datum['label'] == 1:
+                ones.append(line)
+    # Randomly split 0 and 1 data into train, test, val
+    random.shuffle(zeros)
+    random.shuffle(ones)
+    max_size = min(len(zeros), len(ones))
     # Calculate the splits
-    train_size = int(len(lines) * train_ratio)
-    test_size = int(len(lines) * test_ratio)
-    val_size = int(len(lines) * val_ratio)
-    # Split the lines
-    train_lines = lines[:train_size]
-    test_lines = lines[train_size:train_size + test_size]
-    val_lines = lines[-val_size:]
-    # Write the splits to separate files
+    train_size = int(max_size * train_ratio)
+    test_size = int(max_size * test_ratio)
+    val_size = int(max_size * val_ratio)
+    train_lines = zeros[:train_size]+ones[:train_size]
+    test_lines = zeros[train_size:train_size + test_size]+ones[train_size:train_size + test_size]
+    val_lines = zeros[train_size+test_size:train_size+test_size+val_size]+ones[train_size+test_size:train_size+test_size+val_size]
+    random.shuffle(train_lines)
+    random.shuffle(test_lines)
+    random.shuffle(val_lines)
     with open(os.path.join(directory, 'data_train.json'), 'w') as f:
         f.writelines(train_lines)
+        print('total training data: ', len(train_lines))
     with open(os.path.join(directory, 'data_test.json'), 'w') as f:
         f.writelines(test_lines)
+        print('total test data: ', len(test_lines))
     with open(os.path.join(directory, 'data_dev.json'), 'w') as f:
         f.writelines(val_lines)
-
+        print('total validation data: ', len(val_lines))
 
 import argparse
 from data.dataprocessor import AliDataProcessor, RealDataProcessor
@@ -415,20 +423,20 @@ if __name__ == '__main__':
     print('total user nums: ', len(DataProcessor.user_dict))
     print('total jd nums: ', len(DataProcessor.jd_dict))
     import os
-    path = "data/step1_data/exp_morethan_50_graph"
+    path = "data/step1_data/exp_morethan_0_graph"
     if not os.path.exists(path):
         # Create a new directory because it does not exist
         os.makedirs(path)
-    DataProcessor.generate_datajson('data/step1_data/exp_morethan_50_graph/data.json', exp_len=0)
-    DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/user.json', mode='user')
-    DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/jd.json', mode='jd')
-    DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/graph_hired_jd.json', mode='graph_jd')
-    DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/graph_hired_user.json', mode='graph_user')
-    DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/graph_nothired_jd.json', mode='graph_nothired_jd')
-    DataProcessor.dump_json('data/step1_data/exp_morethan_50_graph/graph_nothired_user.json', mode='graph_nothired_user')
+    DataProcessor.generate_datajson('data/step1_data/exp_morethan_0_graph/data.json', exp_len=0)
+    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/user.json', mode='user')
+    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/jd.json', mode='jd')
+    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/graph_hired_jd.json', mode='graph_jd')
+    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/graph_hired_user.json', mode='graph_user')
+    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/graph_nothired_jd.json', mode='graph_nothired_jd')
+    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/graph_nothired_user.json', mode='graph_nothired_user')
 
     # 2. change data.json into train/test.json
-    # split_train_test('data/step1_data/exp_morethan_50_graph/data.json', train_ratio=0.8, test_ratio=0.1, val_ratio=0.1)
+    split_train_test('data/step1_data/exp_morethan_0_graph/data.json', train_ratio=0.8, test_ratio=0.1, val_ratio=0.1)
 
-    # index_table(args)
-    # preprocess_Graph(args)
+    index_table(args)
+    preprocess_Graph(args)

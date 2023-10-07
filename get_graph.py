@@ -15,8 +15,8 @@ word_tokenizer = jieba.cut
 
 if __name__ == '__main__':
     graph_path = "data/train-test_data/s2_graph.train"
-    cv_json_path = "data/step1_data/exp_morethan_50_graph/user.json"
-    jd_json_path = "data/step1_data/exp_morethan_50_graph/jd.json"
+    cv_json_path = "data/step1_data/exp_morethan_0_graph/user.json"
+    jd_json_path = "data/step1_data/exp_morethan_0_graph/jd.json"
 
     f_graph = open(graph_path, 'r')
     f_cv = open(cv_json_path, 'r', encoding='utf8')

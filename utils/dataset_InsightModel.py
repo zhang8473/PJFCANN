@@ -74,9 +74,9 @@ def turn_graphid_2_content(total_id_list, isCV=True):
     word_tokenizer = jieba.cut
 
     if isCV:
-        f_path = "data/step1_data/exp_morethan_50_graph/user.json"
+        f_path = "data/step1_data/exp_morethan_0_graph/user.json"
     else:
-        f_path = "data/step1_data/exp_morethan_50_graph/jd.json"
+        f_path = "data/step1_data/exp_morethan_0_graph/jd.json"
     f = open(f_path, 'r', encoding='utf8')
     f_dict = json.load(f)
 

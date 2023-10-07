@@ -208,22 +208,22 @@ class AliDataProcessor:
         '''
         if mode == 'user':
             with open(dump_path, 'w') as f:
-                json.dump(self.user_dict, f)
+                json.dump(self.user_dict, f, ensure_ascii=False)
         elif mode == 'jd':
             with open(dump_path, 'w') as f:
-                json.dump(self.jd_dict, f)
+                json.dump(self.jd_dict, f, ensure_ascii=False)
         elif mode == 'graph_user':
             with open(dump_path, 'w') as f:
-                json.dump(self.user_luqu_dict, f)
+                json.dump(self.user_luqu_dict, f, ensure_ascii=False)
         elif mode == 'graph_jd':
             with open(dump_path, 'w') as f:
-                json.dump(self.jd_luqu_dict, f)
+                json.dump(self.jd_luqu_dict, f, ensure_ascii=False)
         elif mode == 'graph_nothired_user':
             with open(dump_path, 'w') as f:
-                json.dump(self.user_nothired_dict, f)
+                json.dump(self.user_nothired_dict, f, ensure_ascii=False)
         elif mode == 'graph_nothired_jd':
             with open(dump_path, 'w') as f:
-                json.dump(self.jd_nothired_dict, f)
+                json.dump(self.jd_nothired_dict, f, ensure_ascii=False)
         return
 
 class RealDataProcessor:
