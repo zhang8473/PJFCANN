@@ -69,33 +69,16 @@ def build_vocab(words_sets, glove_path):
     return word_vec
 
 
-def turn_graphid_2_content(total_id_list, isCV=True):
+def turn_graphid_2_content(total_id_list, f_dict):
     ret_list = []
     word_tokenizer = jieba.cut
-
-    if isCV:
-        f_path = "data/step1_data/exp_morethan_0_graph/user.json"
-    else:
-        f_path = "data/step1_data/exp_morethan_0_graph/jd.json"
-    f = open(f_path, 'r', encoding='utf8')
-    f_dict = json.load(f)
-
+    print(f"total docs: {len(total_id_list)}")
     for ids_line in total_id_list:
         ids_list = []
-        single_id_list = ids_line.split(' ')
-        for id in single_id_list:
-            if(id in f_dict):
-                content_list = f_dict[id]
-            else:
-                continue
-            content = ""
-            for z in content_list:
-                content += z
-            content_list = list(word_tokenizer(content))
-            content = ""
-            for z in content_list:
-                content = content + z + ' '
-            ids_list.append(content)
+        for id_ in ids_line.split(' '):
+            if id_ in f_dict:
+                content_list = f_dict[id_]
+                ids_list.append(" ".join([" ".join(word_tokenizer(c_)) for c_ in content_list]))
         ret_list.append(ids_list)
     return ret_list
 
@@ -110,8 +93,11 @@ def get_insight(config):
     target = {}
 
     dico_label = {'0': 0, '1': 1}
+    resume_dict = json.load(open("data/user.json", 'r', encoding='utf8'))
+    jd_dict = json.load(open("data/jd.json", 'r', encoding='utf8'))
 
     for data_type in ['train', 'dev', 'test']:
+        print(f"Dealing with {data_type} data.")
         s1[data_type], s2[data_type], g1[data_type], g2[data_type], target[data_type] = {}, {}, {}, {}, {}
         A1[data_type], A2[data_type] = {}, {}
         s1[data_type]['path'] = os.path.join(data_path, 's1.' + data_type)
@@ -132,24 +118,8 @@ def get_insight(config):
                 for line in open(target[data_type]['path'], 'r')])
 
         # 将g1/g2中每一行中对应的id转换成为对应的内容，存入对应的g1/g2[data_type]['sent']中
-        g1[data_type]['sent'] = turn_graphid_2_content(g1[data_type]['similar'], False)
-        g2[data_type]['sent'] = turn_graphid_2_content(g2[data_type]['similar'], True)
-
-        # graph处理：长度填充 + 生成掩码masks
-        graph1_inputs = []
-        graph2_inputs = []
-        g1_list = g1[data_type]['similar']
-        g2_list = g2[data_type]['similar']
-        for gline in g1_list:
-            glist = list(map(eval, gline.replace('\n','').split(' ')))
-            graph1_inputs.append(glist)
-        for gline in g2_list:
-            glist = list(map(eval, gline.replace('\n','').split(' ')))
-            graph2_inputs.append(glist)
-        # g1_inputs, g1_mask, g1_lenmax = data_masks(graph1_inputs, [0])
-        # g2_inputs, g2_mask, g2_lenmax = data_masks(graph2_inputs, [0])
-        g1[data_type]['similar'] = graph1_inputs
-        g2[data_type]['similar'] = graph2_inputs
+        g1[data_type]['sent'] = turn_graphid_2_content(g1[data_type]['similar'], jd_dict)
+        g2[data_type]['sent'] = turn_graphid_2_content(g2[data_type]['similar'], resume_dict)
 
         assert len(s1[data_type]['sent']) == len(s2[data_type]['sent']) == \
                len(g1[data_type]['sent']) == len(g2[data_type]['sent']) == \

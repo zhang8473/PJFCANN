@@ -23,10 +23,10 @@ def JD_segmentor(jd_content):
     return req_list
 
 class AliDataProcessor:
-    def __init__(self, dataDir):
+    def __init__(self, dataDir, split_):
         self.user_file = os.path.join(dataDir, 'table1_user.csv')
         self.jd_file = os.path.join(dataDir, 'table2_jd.csv')
-        self.action_file = os.path.join(dataDir, 'table3_action.csv')
+        self.action_file = os.path.join(dataDir, f'table3_action_{split_}.csv')
         self.browse_pair = self._generate_pair(mode='browsed') # list
         self.deliver_pair = self._generate_pair(mode='delivered') # list
         self.satisfied_pair = self._generate_pair(mode='satisfied') # list
@@ -70,6 +70,7 @@ class AliDataProcessor:
         # mode in [user, jd]
         import csv
         if mode == 'user':
+            # (self.browse_pair, self.deliver_pair, self.satisfied_pair)
             f = open(self.user_file, 'r', encoding='utf8')
             next(f)
             print('[user mode ...]')

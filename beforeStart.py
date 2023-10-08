@@ -197,9 +197,9 @@ def preprocess_Graph(args):
     if not os.path.exists(args.train_test_dir):
         os.makedirs(args.train_test_dir)
 
-    prepro_Graph_each(args, "data/step1_data/exp_morethan_0_graph/data_dev.json", "dev")
-    prepro_Graph_each(args, "data/step1_data/exp_morethan_0_graph/data_train.json", "train")
-    prepro_Graph_each(args, "data/step1_data/exp_morethan_0_graph/data_test.json", "test")
+    prepro_Graph_each(args, "data/train_data/", "train")
+    prepro_Graph_each(args, "data/test_data/", "test")
+    prepro_Graph_each(args, "data/val_data/", "dev")
 
 
 def prepro_Graph_each(args, data_path, out_name, exp_len=50, graph_num=5):
@@ -211,14 +211,14 @@ def prepro_Graph_each(args, data_path, out_name, exp_len=50, graph_num=5):
 
     # Reading data.json
     source_data = []
-    with open(data_path, 'r', encoding='utf8') as f:
+    with open(data_path+'data.json', 'r', encoding='utf8') as f:
         for line in f:
             source_data.append(json.loads(line))
 
     # Reading luqu.json
-    with open("data/step1_data/exp_morethan_0_graph/graph_hired_user.json", 'r', encoding='utf8') as f:
+    with open(data_path+"graph_hired_user.json", 'r', encoding='utf8') as f:
         user_luqu_dict = json.load(f)
-    with open("data/step1_data/exp_morethan_0_graph/graph_hired_jd.json", 'r', encoding='utf8') as f:
+    with open(data_path+"graph_hired_jd.json", 'r', encoding='utf8') as f:
         jd_recruit_dict = json.load(f)
 
     # Reading nothired.json
@@ -232,9 +232,6 @@ def prepro_Graph_each(args, data_path, out_name, exp_len=50, graph_num=5):
     label_write_file = open("data/train-test_data/labels.{}".format(out_name), 'w', encoding='utf8')
     jd_graph_file = open("data/train-test_data/s1_graph.{}".format(out_name), 'w', encoding='utf8')
     cv_graph_file = open("data/train-test_data/s2_graph.{}".format(out_name), 'w', encoding='utf8')
-
-    # Reading index-table
-    user_id2num, user_num2id, jd_id2num, jd_num2id = load_index_table(args)
 
     # Generate and write
     for i, content in tqdm(enumerate(source_data)):
@@ -262,30 +259,20 @@ def prepro_Graph_each(args, data_path, out_name, exp_len=50, graph_num=5):
         cv_line_list = list(word_tokenizer(cv_content))
         cv_line = " ".join(word for word in cv_line_list if word not in STOPWORDS)
         # Graph cv (R-R)
-        R_R_list = [user_id2num[resume_id]]
-        if job_id in jd_recruit_dict:
-            user_recruit_list = jd_recruit_dict[job_id]
-        else:
-            # print('jobID', job_id, 'does not exist.')
-            user_recruit_list = []
-        for user_item in user_recruit_list:
+        R_R_list = [resume_id]
+        for user_item in jd_recruit_dict.get(job_id, []):
             if user_item != resume_id:
-                R_R_list.append(user_id2num[user_item])
+                R_R_list.append(user_item)
                 # R_R_list.append(user_item)
         # R_R_line = resume_id + " "
         R_R_line = " ".join([str(r_) for r_ in R_R_list])
 
         # Graph jd (J-J)
-        J_J_list = [jd_id2num[job_id]]
-        if resume_id in user_luqu_dict:
-            jd_luqu_list = user_luqu_dict[resume_id]
-        else:
-            print('CVID', resume_id)
-            jd_luqu_list = []
-        for jd_item in jd_luqu_list:
+        J_J_list = [job_id]
+        for jd_item in user_luqu_dict.get(resume_id, []):
             if jd_item != job_id:
                 # J_J_list.append(jd_item)
-                J_J_list.append(jd_id2num[jd_item])
+                J_J_list.append(jd_item)
         J_J_line = " ".join([str(j_) for j_ in J_J_list])
         # write file
         if (len(cv_line.split(' ')) >= exp_len and len(jd_line.split(' ')) >= 15):
@@ -303,140 +290,63 @@ def prepro_Graph_each(args, data_path, out_name, exp_len=50, graph_num=5):
     cv_graph_file.close()
 
 
-def index_table(config):
-    user_id2num = {}
-    user_num2id = set()
-    jd_id2num = {}
-    jd_num2id = set()
-    import csv
-    file_path = config.table_action
-    f = open(file_path, 'r', encoding='utf8')
-    next(f)
-    csv_reader = csv.reader(f, delimiter=',', quotechar='"')
-    for content_list in tqdm(csv_reader):
-        user_id = content_list[0]
-        jd_no = content_list[1]
-        if user_id not in user_num2id:
-            user_num2id.add(user_id)
-            user_id2num[user_id] = len(user_num2id) - 1
-        if jd_no not in jd_num2id:
-            jd_num2id.add(jd_no)
-            jd_id2num[jd_no] = len(jd_num2id) - 1
+def split_train_test(train_ratio, test_ratio, val_ratio):
+    import pandas as pd
+    from sklearn.model_selection import train_test_split
 
-    print('User: ', len(user_num2id))
-    print('JD: ', len(jd_num2id))
+    df = pd.read_csv(args.table_action)
+    df_sat0 = df[(df['satisfied'] == 0) & (df['delivered'] == 1)]
+    df_sat1 = df[df['satisfied'] == 1]
 
-    f_save_uid2num = open(config.f_save_uid2num, 'w', encoding='utf8')
-    json.dump(user_id2num, f_save_uid2num, ensure_ascii=False)
-    f_save_unum2id = open(config.f_save_unum2id, 'w', encoding='utf8')
-    json.dump(list(user_num2id), f_save_unum2id, ensure_ascii=False)
-    f_save_jid2num = open(config.f_save_jid2num, 'w', encoding='utf8')
-    json.dump(jd_id2num, f_save_jid2num, ensure_ascii=False)
-    f_save_jnum2id = open(config.f_save_jnum2id, 'w', encoding='utf8')
-    json.dump(list(jd_num2id), f_save_jnum2id, ensure_ascii=False)
+    df_train_sat0, df_testval_sat0 = train_test_split(df_sat0, train_size=train_ratio, random_state=42)
+    df_test_sat0, df_val_sat0 = train_test_split(df_testval_sat0, train_size=test_ratio/(test_ratio+val_ratio), random_state=42)
 
-    f_save_unum2id.close()
-    f_save_uid2num.close()
-    f_save_jid2num.close()
-    f_save_jnum2id.close()
-    return
+    df_train_sat1, df_testval_sat1 = train_test_split(df_sat1, train_size=train_ratio, random_state=42)
+    df_test_sat1, df_val_sat1 = train_test_split(df_testval_sat1, train_size=test_ratio/(test_ratio+val_ratio), random_state=42)
 
+    max_train_size = min(df_train_sat0.shape[0], df_train_sat1.shape[0])
+    df_train = pd.concat([df_train_sat0.head(max_train_size), df_train_sat1.head(max_train_size)])
+    df_train.to_csv(args.table_action.replace(".csv", "_train.csv"), index=False)
 
-def load_index_table(config):
-    f_save_uid2num = open(config.f_save_uid2num, 'r', encoding='utf8')
-    user_id2num = json.load(f_save_uid2num)
-    f_save_unum2id = open(config.f_save_unum2id, 'r', encoding='utf8')
-    user_num2id = json.load(f_save_unum2id)
-    f_save_jid2num = open(config.f_save_jid2num, 'r', encoding='utf8')
-    jd_id2num = json.load(f_save_jid2num)
-    f_save_jnum2id = open(config.f_save_jnum2id, 'r', encoding='utf8')
-    jd_num2id = json.load(f_save_jnum2id)
+    max_test_size = min(df_test_sat0.shape[0], df_test_sat1.shape[0])
+    df_test = pd.concat([df_test_sat0.head(max_test_size), df_test_sat1.head(max_test_size)])
+    df_test.to_csv(args.table_action.replace(".csv", "_test.csv"), index=False)
 
-    f_save_unum2id.close()
-    f_save_uid2num.close()
-    f_save_jid2num.close()
-    f_save_jnum2id.close()
-    return user_id2num, user_num2id, jd_id2num, jd_num2id
+    max_val_size = min(df_val_sat0.shape[0], df_val_sat1.shape[0])
+    df_val = pd.concat([df_val_sat0.head(max_val_size), df_val_sat1.head(max_val_size)])
+    df_val.to_csv(args.table_action.replace(".csv", "_val.csv"), index=False)
 
-
-def split_train_test(input_, train_ratio, test_ratio, val_ratio):
-    assert train_ratio+test_ratio+val_ratio==1.0
-    import random
-    zeros = []
-    ones = []
-    # Open the text file and read all lines
-    directory = os.path.dirname(input_)
-    with open(input_, 'r') as f:
-        for line in f.readlines():
-            datum = json.loads(line)
-            if datum['label'] == 0:
-                zeros.append(line)
-            elif datum['label'] == 1:
-                ones.append(line)
-    # Randomly split 0 and 1 data into train, test, val
-    random.shuffle(zeros)
-    random.shuffle(ones)
-    max_size = min(len(zeros), len(ones))
-    # Calculate the splits
-    train_size = int(max_size * train_ratio)
-    test_size = int(max_size * test_ratio)
-    val_size = int(max_size * val_ratio)
-    train_lines = zeros[:train_size]+ones[:train_size]
-    test_lines = zeros[train_size:train_size + test_size]+ones[train_size:train_size + test_size]
-    val_lines = zeros[train_size+test_size:train_size+test_size+val_size]+ones[train_size+test_size:train_size+test_size+val_size]
-    random.shuffle(train_lines)
-    random.shuffle(test_lines)
-    random.shuffle(val_lines)
-    with open(os.path.join(directory, 'data_train.json'), 'w') as f:
-        f.writelines(train_lines)
-        print('total training data: ', len(train_lines))
-    with open(os.path.join(directory, 'data_test.json'), 'w') as f:
-        f.writelines(test_lines)
-        print('total test data: ', len(test_lines))
-    with open(os.path.join(directory, 'data_dev.json'), 'w') as f:
-        f.writelines(val_lines)
-        print('total validation data: ', len(val_lines))
 
 import argparse
 from data.dataprocessor import AliDataProcessor, RealDataProcessor
 
 if __name__ == '__main__':
+    # 2. change data.json into train/test.json
     parser = argparse.ArgumentParser()
     parser.add_argument('--orignal_data_format', default='ali', choices=['ali', 'real'])
     parser.add_argument('--orignal_data_dir', default='Recruitment_round1_train_20190716')
     parser.add_argument('--tokenizer', default='jieba')
     parser.add_argument('--train_test_dir', default='data/train-test_data')
     parser.add_argument('--table_action', default='train-test_data\\table3_action')
-    parser.add_argument('--f_save_uid2num', default='data/step1_data/uid2num.json')
-    parser.add_argument('--f_save_unum2id', default='data/step1_data/unum2id.json')
-    parser.add_argument('--f_save_jid2num', default='data/step1_data/jid2num.json')
-    parser.add_argument('--f_save_jnum2id', default='data/step1_data/jnum2id.json')
     args = parser.parse_args()
+    split_train_test(train_ratio=0.8, test_ratio=0.1, val_ratio=0.1)
 
     # Step 0. choose Processor according to the original data
-    if args.orignal_data_format == 'ali':
-        DataProcessor = AliDataProcessor(args.orignal_data_dir)
-    else:
-        DataProcessor = RealDataProcessor(args.orignal_data_dir)
-
-    # Step 1. change original data into data.json
-    print('total user nums: ', len(DataProcessor.user_dict))
-    print('total jd nums: ', len(DataProcessor.jd_dict))
-    import os
-    path = "data/step1_data/exp_morethan_0_graph"
-    if not os.path.exists(path):
-        # Create a new directory because it does not exist
-        os.makedirs(path)
-    DataProcessor.generate_datajson('data/step1_data/exp_morethan_0_graph/data.json', exp_len=0)
-    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/user.json', mode='user')
-    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/jd.json', mode='jd')
-    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/graph_hired_jd.json', mode='graph_jd')
-    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/graph_hired_user.json', mode='graph_user')
-    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/graph_nothired_jd.json', mode='graph_nothired_jd')
-    DataProcessor.dump_json('data/step1_data/exp_morethan_0_graph/graph_nothired_user.json', mode='graph_nothired_user')
-
-    # 2. change data.json into train/test.json
-    split_train_test('data/step1_data/exp_morethan_0_graph/data.json', train_ratio=0.8, test_ratio=0.1, val_ratio=0.1)
-
-    index_table(args)
+    for split_ in ('train', 'test', 'val'):
+        DataProcessor = AliDataProcessor(args.orignal_data_dir, split_=split_)
+        # Step 1. change original data into data.json
+        print('total user nums: ', len(DataProcessor.user_dict))
+        print('total jd nums: ', len(DataProcessor.jd_dict))
+        import os
+        path = f"data/{split_}_data"
+        if not os.path.exists(path):
+            # Create a new directory because it does not exist
+            os.makedirs(path)
+        DataProcessor.generate_datajson(f'{path}/data.json', exp_len=0)
+        DataProcessor.dump_json(f'{path}/graph_hired_jd.json', mode='graph_jd')
+        DataProcessor.dump_json(f'{path}/graph_hired_user.json', mode='graph_user')
+        DataProcessor.dump_json(f'{path}/graph_nothired_jd.json', mode='graph_nothired_jd')
+        DataProcessor.dump_json(f'{path}/graph_nothired_user.json', mode='graph_nothired_user')
+    DataProcessor.dump_json(f'data/user.json', mode='user')
+    DataProcessor.dump_json(f'data/jd.json', mode='jd')
     preprocess_Graph(args)
