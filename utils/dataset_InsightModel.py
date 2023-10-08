@@ -16,6 +16,7 @@ import torch
 import argparse
 import numpy as np
 import networkx as nx
+from tqdm import tqdm
 
 
 def trans_to_cuda(variable):
@@ -72,8 +73,7 @@ def build_vocab(words_sets, glove_path):
 def turn_graphid_2_content(total_id_list, f_dict):
     ret_list = []
     word_tokenizer = jieba.cut
-    print(f"total docs: {len(total_id_list)}")
-    for ids_line in total_id_list:
+    for ids_line in tqdm(total_id_list, total=len(total_id_list), desc='Tokenizing: '):
         ids_list = []
         for id_ in ids_line.split(' '):
             if id_ in f_dict:
